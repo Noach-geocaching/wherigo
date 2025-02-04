@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wherigo Reverse Code Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f5f5f5;
+    }
+    h1 {
+      text-align: center;
+    }
+    /* Grid met 18 input vakjes */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 2rem); /* standaard breedte: 2rem per vakje */
+      gap: 0.5rem;
+      justify-content: center;
+      margin-bottom: 1rem;
+      transition: grid-template-columns 0.2s ease;
+    }
+    .grid.multi input {
+      /* Als multi-toestaan aan staat, gebruiken we bredere vakjes */
+      width: 4rem;
+    }
+    .grid input {
+      width: 2rem;
+      padding: 0.2rem;
+      font-size: 1rem;
+      text-align: center;
+      transition: width 0.2s ease;
+    }
+    .controls {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin-right: 0.5rem;
+    }
+    .output {
+      white-space: pre-wrap;
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      font-family: monospace;
+      text-align: center;
+      font-size: 1.5rem; /* Grotere output */
+    }
+  </style>
+</head>
+<body>
+  <h1>Wherigo Reverse Code Calculator</h1>
+  
+  <div class="controls">
+    <label>
+      <input type="checkbox" id="allowMulti">
+      Allow multiple characters per box
+    </label>
+  </div>
+  
+  <!-- Grid met 18 input vakjes -->
+  <div class="grid" id="inputGrid">
+    <!-- Invoer vakjes met data-index -->
+    <input type="text" data-index="0" id="cell-0">
+    <input type="text" data-index="1" id="cell-1">
+    <input type="text" data-index="2" id="cell-2">
+    <input type="text" data-index="3" id="cell-3">
+    <input type="text" data-index="4" id="cell-4">
+    <input type="text" data-index="5" id="cell-5">
+    
+    <input type="text" data-index="6" id="cell-6">
+    <input type="text" data-index="7" id="cell-7">
+    <input type="text" data-index="8" id="cell-8">
+    <input type="text" data-index="9" id="cell-9">
+    <input type="text" data-index="10" id="cell-10">
+    <input type="text" data-index="11" id="cell-11">
+    
+    <input type="text" data-index="12" id="cell-12">
+    <input type="text" data-index="13" id="cell-13">
+    <input type="text" data-index="14" id="cell-14">
+    <input type="text" data-index="15" id="cell-15">
+    <input type="text" data-index="16" id="cell-16">
+    <input type="text" data-index="17" id="cell-17">
+  </div>
+  
+  <div class="controls">
+    <button id="resetButton">Reset</button>
+  </div>
+  
+  <div class="output" id="output"></div>
+  
+  <script>
+    // Haal de checkbox en alle inputs op
+    const allowMultiCheckbox = document.getElementById("allowMulti");
+    const inputGrid = document.getElementById("inputGrid");
+    const inputs = Array.from(document.querySelectorAll('.grid input'));
+    const outputEl = document.getElementById("output");
+
+    // Stel standaard attributen in (1 teken per vakje als multi niet toegestaan is)
+    function updateInputAttributes() {
+      const allowMulti = allowMultiCheckbox.checked;
+      if (allowMulti) {
+        // Verwijder maxLength en maak vakjes breder
+        inputs.forEach(input => {
+          input.removeAttribute('maxLength');
+          input.style.width = "4rem";
+        });
+        // Pas de grid layout aan (6 kolommen van 4rem)
+        inputGrid.style.gridTemplateColumns = "repeat(6, 4rem)";
+        inputGrid.classList.add("multi");
+      } else {
+        // Stel maxLength in op 1 en maak vakjes smaller
+        inputs.forEach(input => {
+          input.setAttribute('maxLength', '1');
+          input.style.width = "2rem";
+        });
+        inputGrid.style.gridTemplateColumns = "repeat(6, 2rem)";
+        inputGrid.classList.remove("multi");
+      }
+    }
+    
+    allowMultiCheckbox.addEventListener('change', updateInputAttributes);
+    updateInputAttributes();
+    
+    // Auto-advance in enkel-teken modus
+    inputs.forEach((input, idx) => {
+      input.addEventListener('input', function () {
+        const allowMulti = allowMultiCheckbox.checked;
+        if (!allowMulti && input.value.length === 1 && idx < inputs.length - 1) {
+          inputs[idx + 1].focus();
+        }
+        // Herbereken na elke invoer
+        updateOutput();
+      });
+    });
+    
+    // Reset functionaliteit
+    document.getElementById("resetButton").addEventListener("click", () => {
+      inputs.forEach(input => input.value = '');
+      inputs[0].focus();
+      updateOutput();
+    });
+    
+    // Functie die de invoer verwerkt en de coördinaten berekent.
+    // Mapping: B2=0, C2=1, D2=2, E2=3, F2=4, G2=5,
+    //          B3=6, C3=7, D3=8, E3=9, F3=10, G3=11,
+    //          B4=12, C4=13, D4=14, E4=15, F4=16, G4=17.
+    function calculateCoordinates(grid) {
+      // Gebruik '_' als placeholder als een veld leeg is.
+      const filled = grid.map(val => val === '' ? '_' : val);
+      
+      // Helper: controleer of een karakter een cijfer is
+      function isNumeric(ch) {
+        return /^\d$/.test(ch);
+      }
+      
+      // Controleer de vakjes C4 (index 13) en F4 (index 16)
+      const c4 = filled[13];
+      const f4 = filled[16];
+      const bothNumeric = isNumeric(c4) && isNumeric(f4);
+      
+      let option = '';
+      if (bothNumeric) {
+        const sum = parseInt(c4, 10) + parseInt(f4, 10);
+        option = (sum % 2 === 0) ? 'even' : 'oneven';
+      } else {
+        option = 'beide';
+      }
+      
+      // Bereken de twee mogelijke coördinaten volgens jouw formules:
+      // Optie 1:
+      const north1 = 'N ' + filled[2] + filled[10] + '.' + filled[7] + filled[15] + filled[0] + filled[16] + filled[5];
+      const east1  = 'E ' + filled[1] + filled[12] + filled[17] + '.' + filled[9] + filled[6] + filled[4] + filled[13] + filled[11];
+      // Optie 2:
+      const north2 = 'N ' + filled[6] + filled[5] + '.' + filled[2] + filled[12] + filled[15] + filled[16] + filled[0];
+      const east2  = 'E ' + filled[10] + filled[17] + filled[4] + '.' + filled[1] + filled[9] + filled[11] + filled[13] + filled[7];
+      
+      // Alleen de coördinaten, noord en oost op 1 regel.
+      let result = '';
+      if (option === 'even') {
+        result = `${north1} ${east1}`;
+      } else if (option === 'oneven') {
+        result = `${north2} ${east2}`;
+      } else {
+        result = `${north1} ${east1}\n${north2} ${east2}`;
+      }
+      return result;
+    }
+    
+    // Functie om de output bij te werken
+    function updateOutput() {
+      const gridValues = inputs.map(input => input.value.trim());
+      const result = calculateCoordinates(gridValues);
+      outputEl.textContent = result;
+    }
+    
+    // Herbereken de output ook bij het laden van de pagina (om lege velden als _ te tonen)
+    document.addEventListener("DOMContentLoaded", updateOutput);
+  </script>
+</body>
+</html>
