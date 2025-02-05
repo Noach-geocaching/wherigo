@@ -156,7 +156,28 @@
       // Gebruik '_' als placeholder als een veld leeg is.
       const filled = grid.map(val => val === '' ? '_' : val);
       
-      // Helper: controleer of een karakter een cijfer is
+      // Bepaal de kwadrant-indicator op basis van het vierde cijfer (index 3)
+      const quadrantDigit = filled[3];
+      let latPrefix, lonPrefix;
+      switch (quadrantDigit) {
+        case '1':
+          latPrefix = 'N '; lonPrefix = 'E ';
+          break;
+        case '2':
+          latPrefix = 'S '; lonPrefix = 'E ';
+          break;
+        case '3':
+          latPrefix = 'S '; lonPrefix = 'W ';
+          break;
+        case '4':
+          latPrefix = 'N '; lonPrefix = 'W ';
+          break;
+        default:
+          latPrefix = '_ '; lonPrefix = '_ ';
+          break;
+      }
+      
+      // Helper: controleer of een karakter een cijfer is (niet direct nodig voor het kwadrant, maar voor andere controles)
       function isNumeric(ch) {
         return /^\d$/.test(ch);
       }
@@ -176,20 +197,20 @@
       
       // Bereken de twee mogelijke coördinaten volgens jouw formules:
       // Optie 1:
-      const north1 = 'N ' + filled[2] + filled[10] + '.' + filled[7] + filled[15] + filled[0] + filled[16] + filled[5];
-      const east1  = 'E ' + filled[1] + filled[12] + filled[17] + '.' + filled[9] + filled[6] + filled[4] + filled[13] + filled[11];
+      const coord1 = latPrefix + filled[2] + filled[10] + '.' + filled[7] + filled[15] + filled[0] + filled[16] + filled[5] +
+                     " " + lonPrefix + filled[1] + filled[12] + filled[17] + '.' + filled[9] + filled[6] + filled[4] + filled[13] + filled[11];
       // Optie 2:
-      const north2 = 'N ' + filled[6] + filled[5] + '.' + filled[2] + filled[12] + filled[15] + filled[16] + filled[0];
-      const east2  = 'E ' + filled[10] + filled[17] + filled[4] + '.' + filled[1] + filled[9] + filled[11] + filled[13] + filled[7];
+      const coord2 = latPrefix + filled[6] + filled[5] + '.' + filled[2] + filled[12] + filled[15] + filled[16] + filled[0] +
+                     " " + lonPrefix + filled[10] + filled[17] + filled[4] + '.' + filled[1] + filled[9] + filled[11] + filled[13] + filled[7];
       
-      // Alleen de coördinaten, noord en oost op 1 regel.
+      // Alleen de coördinaten, noord/lengte op 1 regel per optie.
       let result = '';
       if (option === 'even') {
-        result = `${north1} ${east1}`;
+        result = coord1;
       } else if (option === 'oneven') {
-        result = `${north2} ${east2}`;
+        result = coord2;
       } else {
-        result = `${north1} ${east1}\n${north2} ${east2}`;
+        result = coord1 + "\n" + coord2;
       }
       return result;
     }
@@ -206,3 +227,4 @@
   </script>
 </body>
 </html>
+
